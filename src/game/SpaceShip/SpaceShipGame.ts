@@ -2,6 +2,7 @@ import { IGame } from '../../classes/IGame';
 import Game from '../GameGod';
 import imageSpaceShipPath from '../../asset/spaceships/red.png';
 import { KEYBOARD_CODE } from '../../constants';
+import BlasterShoot from './BlasterShoot';
 
 class SpaceShip implements IGame {
   public imageSpaceShip: HTMLImageElement;
@@ -17,6 +18,8 @@ class SpaceShip implements IGame {
     this.move();
     this.imageSpaceShip = new Image();
     this.imageSpaceShip.src = imageSpaceShipPath;
+
+    this.gameGod.gameObjects.set('blaster', new BlasterShoot(this.gameGod));
   }
 
   private move() {
