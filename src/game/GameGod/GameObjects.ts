@@ -22,8 +22,16 @@ class GameObjects {
     this.gameList = gameMapPivo;
   }
 
-  public getItem(id: string): IGame {
-    return this.gameList.get(id);
+  public getItem<T = IGame>(id: string): T {
+    return (this.gameList.get(id) as unknown) as T;
+  }
+
+  public getAllOfType<T = IGame>(instance: any): T[] {
+    const instanceTypes = Array.from(this.gameList.values()).filter(
+      (itemGame) => itemGame instanceof instance
+    );
+
+    return (instanceTypes as unknown) as T[];
   }
 
   public deleteItem(id: string) {

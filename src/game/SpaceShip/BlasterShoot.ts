@@ -5,12 +5,13 @@ class BlasterShoot implements IGame {
   constructor(
     protected gameGod: Game,
     public spaceShipX: number,
-    public spaceShipY: number
+    public spaceShipY: number,
+    public objectId: string
   ) {}
 
-  static objectName = 'blaster';
-
   public readonly shotWidth = this.gameGod.GAME_WIDTH * 0.01;
+
+  public damage = 16;
 
   public positionX = this.spaceShipX;
   public positionY = this.spaceShipY - this.shotWidth;

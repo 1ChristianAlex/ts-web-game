@@ -4,9 +4,10 @@ import imageSpaceShipPath from '../../asset/spaceships/red.png';
 import { KEYBOARD_CODE } from '../../constants';
 import BlasterShoot from './BlasterShoot';
 import SpaceShipLife from './SpaceShipLife';
+import CommonEnemies from '../Enemies/CommonEnemies';
 
 class SpaceShip implements IGame {
-  public imageSpaceShip: HTMLImageElement;
+  private imageSpaceShip: HTMLImageElement;
   public spaceShipWidth = this.gameGod.GAME_WIDTH * 0.1;
   public spaceShipHeigh = this.gameGod.GAME_HEIGHT * 0.25;
 
@@ -15,7 +16,8 @@ class SpaceShip implements IGame {
 
   private spaceShipLife = new SpaceShipLife(this.gameGod);
 
-  private readonly moveFactor = 0.01;
+  private readonly moveFactorX = 0.01;
+  private readonly moveFactorY = 0.02;
 
   constructor(protected gameGod: Game) {
     this.initializeCommands();
@@ -34,7 +36,7 @@ class SpaceShip implements IGame {
     switch (key) {
       case KEYBOARD_CODE.ARROW_LEFT:
         this.positionX =
-          this.positionX - this.gameGod.GAME_WIDTH * this.moveFactor;
+          this.positionX - this.gameGod.GAME_WIDTH * this.moveFactorX;
 
         if (this.positionX < 0) {
           this.positionX = 0;
@@ -42,7 +44,7 @@ class SpaceShip implements IGame {
         break;
       case KEYBOARD_CODE.ARROW_RIGHT:
         this.positionX =
-          this.positionX + this.gameGod.GAME_WIDTH * this.moveFactor;
+          this.positionX + this.gameGod.GAME_WIDTH * this.moveFactorX;
 
         if (this.positionX > this.gameGod.GAME_WIDTH - this.spaceShipWidth) {
           this.positionX = this.gameGod.GAME_WIDTH - this.spaceShipWidth;
@@ -50,7 +52,7 @@ class SpaceShip implements IGame {
         break;
       case KEYBOARD_CODE.ARROW_UP:
         this.positionY =
-          this.positionY - this.gameGod.GAME_HEIGHT * this.moveFactor;
+          this.positionY - this.gameGod.GAME_HEIGHT * this.moveFactorY;
 
         if (this.positionY < 0) {
           this.positionY = 0;
@@ -59,7 +61,7 @@ class SpaceShip implements IGame {
         break;
       case KEYBOARD_CODE.ARROW_DOWN:
         this.positionY =
-          this.positionY + this.gameGod.GAME_HEIGHT * this.moveFactor;
+          this.positionY + this.gameGod.GAME_HEIGHT * this.moveFactorY;
 
         if (this.positionY > this.gameGod.GAME_HEIGHT - this.spaceShipHeigh) {
           this.positionY = this.gameGod.GAME_HEIGHT - this.spaceShipHeigh;
@@ -71,11 +73,12 @@ class SpaceShip implements IGame {
   shootBlaster(key: string) {
     if (key === KEYBOARD_CODE.SPACE) {
       this.gameGod.gameObjects.addTail(
-        `${BlasterShoot.objectName}-${Date.now()}`,
+        `${BlasterShoot.name}-${Date.now()}`,
         new BlasterShoot(
           this.gameGod,
           this.positionX + this.spaceShipWidth / 2,
-          this.positionY - this.spaceShipHeigh * 0.01
+          this.positionY - this.spaceShipHeigh * 0.01,
+          `${BlasterShoot.name}-${Date.now()}`
         )
       );
     }
@@ -100,6 +103,32 @@ class SpaceShip implements IGame {
 
     if (this.spaceShipLife.spaceShipLife > 100) {
       this.spaceShipLife.spaceShipLife = 99;
+    }
+
+    const shotsBlaster = this.gameGod.gameObjects.getAllOfType<CommonEnemies>(
+      CommonEnemies
+    );
+
+    const hitEnemie = shotsBlaster.find((enemies) => {
+      const hitX =
+        Math.round(enemies.positionX) >= Math.round(this.positionX) &&
+        Math.round(enemies.positionX) <=
+          Math.round(this.positionX + this.spaceShipWidth);
+
+      const hitY =
+        Math.round(enemies.positionY) >= Math.round(this.positionY) &&
+        Math.round(enemies.positionY) <=
+          Math.round(this.positionY + this.spaceShipHeigh);
+
+      return hitX && hitY;
+    });
+
+    if (hitEnemie) {
+      this.spaceShipLife.spaceShipLife =
+        this.spaceShipLife.spaceShipLife + hitEnemie.enemieDamage;
+
+      hitEnemie.enemieLife = 0;
+      hitEnemie.enemieDamage = 0;
     }
   }
 }

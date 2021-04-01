@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH, KEYBOARD_CODE } from '../../constants';
 import SpaceShip from '../SpaceShip/SpaceShipGame';
 import StarSpace from '../StarSpace/StarSpaceGame';
 import GameObjects from './GameObjects';
+import CommonEnemies from '../Enemies/CommonEnemies';
 
 class Game implements IGame {
   public gameObjects = new GameObjects();
@@ -18,15 +19,21 @@ class Game implements IGame {
   }
 
   private loadGameObjects(): void {
-    const spaceShip = new SpaceShip(this);
-
     const startNumber = 50;
-
+    const enemiesNumber = 10;
     for (let starIndex = 0; starIndex < startNumber; starIndex++) {
       this.gameObjects.addHead(`start-${starIndex}`, new StarSpace(this));
     }
 
-    this.gameObjects.addHead('space-ship', spaceShip);
+    for (let enemie = 0; enemie < enemiesNumber; enemie++) {
+      const enemieId = Date.now() + enemie;
+      this.gameObjects.addTail(
+        `${CommonEnemies.name}-${enemieId}`,
+        new CommonEnemies(this, enemieId)
+      );
+    }
+
+    this.gameObjects.addHead(SpaceShip.name, new SpaceShip(this));
   }
 
   pauseGame() {
