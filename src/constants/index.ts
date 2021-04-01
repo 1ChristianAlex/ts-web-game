@@ -7,6 +7,7 @@ enum KEYBOARD_CODE {
   ARROW_RIGHT = 'ArrowRight',
   ARROW_DOWN = 'ArrowDown',
   ESCAPE = 'Escape',
+  SPACE = ' ',
 }
 
 export { GAME_HEIGHT, GAME_WIDTH, KEYBOARD_CODE };

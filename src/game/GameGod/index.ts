@@ -2,9 +2,10 @@ import { IGame } from '../../classes/IGame';
 import { GAME_HEIGHT, GAME_WIDTH, KEYBOARD_CODE } from '../../constants';
 import SpaceShip from '../SpaceShip/SpaceShipGame';
 import StarSpace from '../StarSpace/StarSpaceGame';
+import GameObjects from './GameObjects';
 
 class Game implements IGame {
-  public gameObjects = new Map<string, IGame>();
+  public gameObjects = new GameObjects();
 
   public readonly GAME_WIDTH = GAME_WIDTH;
   public readonly GAME_HEIGHT = GAME_HEIGHT;
@@ -22,10 +23,10 @@ class Game implements IGame {
     const startNumber = 50;
 
     for (let starIndex = 0; starIndex < startNumber; starIndex++) {
-      this.gameObjects.set(`start-${starIndex}`, new StarSpace(this));
+      this.gameObjects.addHead(`start-${starIndex}`, new StarSpace(this));
     }
 
-    this.gameObjects.set('space-ship', spaceShip);
+    this.gameObjects.addHead('space-ship', spaceShip);
   }
 
   pauseGame() {
@@ -46,13 +47,31 @@ class Game implements IGame {
     this.context.fill();
 
     if (this.gameObjects?.size > 0) {
-      this.gameObjects.forEach(async (gameItem) => gameItem.draw(this.context));
+      this.gameObjects
+        .toList()
+        .forEach(async ([_, gameItem]) => gameItem.draw(this.context));
     }
   }
 
   update(deltaTime: number): void {
     if (this.gameObjects?.size > 0) {
-      this.gameObjects.forEach((gameItem) => gameItem.update(deltaTime));
+      this.gameObjects.toList().forEach(([objectName, gameItem]) => {
+        gameItem.update(deltaTime);
+
+        this.deleteWhenOffScreen(gameItem, objectName);
+      });
+    }
+  }
+
+  private deleteWhenOffScreen(gameItem: IGame, objectName: string) {
+    if (typeof gameItem.positionY === 'number' && gameItem.positionY < 0) {
+      this.gameObjects.deleteItem(objectName);
+    }
+    if (
+      typeof gameItem.positionX === 'number' &&
+      gameItem.positionX > this.GAME_WIDTH
+    ) {
+      this.gameObjects.deleteItem(objectName);
     }
   }
 
@@ -61,8 +80,6 @@ class Game implements IGame {
       this.draw();
       this.update(delta);
     }
-    // console.log(60 / (Date.now() - delta));
-
     requestAnimationFrame(this.loop.bind(this));
   }
 }
