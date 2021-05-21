@@ -1,15 +1,22 @@
 import { IGame } from '../../classes/IGame';
 import Game from '../GameGod';
-import cthulhinho from '../../asset/cthulhinho.png';
 import SpaceShip from '../SpaceShip/SpaceShipGame';
 import BlasterShoot from '../SpaceShip/BlasterShoot';
+import AssetsGame from '../../asset';
+import HitableObject from '../../classes/HitableObject';
+import PlayerPoints from '../GameInterface/PlayerPoints';
 
-class CommonEnemies implements IGame {
+class CommonEnemies extends HitableObject implements IGame {
   private imageCommonEnemie: HTMLImageElement;
 
-  constructor(protected gameGod: Game, public enemyId: number) {
+  constructor(
+    protected gameGod: Game,
+    public enemyId: number,
+    private enemyComplexity: number
+  ) {
+    super();
     this.imageCommonEnemie = new Image();
-    this.imageCommonEnemie.src = cthulhinho;
+    this.imageCommonEnemie.src = AssetsGame.ENEMIE;
 
     this.positionY = this.getRandomY();
     this.positionX = this.getRandomX();
@@ -17,13 +24,17 @@ class CommonEnemies implements IGame {
 
   public commonEnemieWidth = this.gameGod.GAME_WIDTH * 0.05;
   public commonEnemieHeigh = this.gameGod.GAME_HEIGHT * 0.13;
-
   public positionX = 0;
   public positionY = 0;
+  public enemieLife = Math.round(50 + this.enemyComplexity / 0.6);
+  public enemieDamage = Math.round(15 + this.enemyComplexity / 0.6);
 
-  public enemieLife = 100;
-
-  public enemieDamage = 45;
+  private addPoints(extraPoint: number = 0) {
+    const point = this.gameGod.gameObjects.getItem<PlayerPoints>(
+      PlayerPoints.name
+    );
+    point.addPoints(extraPoint);
+  }
 
   getRandomY() {
     return (
@@ -67,31 +78,32 @@ class CommonEnemies implements IGame {
       this.positionY = this.positionY + moveFactor;
     }
 
-    const shotsBlaster = this.gameGod.gameObjects.getAllOfType<BlasterShoot>(
-      BlasterShoot
-    );
+    const shotsBlaster =
+      this.gameGod.gameObjects.getAllOfType<BlasterShoot>(BlasterShoot);
 
-    const hitBlaster = shotsBlaster.find((blaster) => {
-      const hitX =
-        Math.round(blaster.positionX) >= Math.round(this.positionX) &&
-        Math.round(blaster.positionX) <=
-          Math.round(this.positionX + this.commonEnemieWidth);
-
-      const hitY =
-        Math.round(blaster.positionY) >= Math.round(this.positionY) &&
-        Math.round(blaster.positionY) <=
-          Math.round(this.positionY + this.commonEnemieHeigh);
-
-      return hitX && hitY;
+    const blasterHit = this.verifyHitObject<BlasterShoot>(shotsBlaster, {
+      positionX: this.positionX,
+      positionY: this.positionY,
+      commonHeigh: this.commonEnemieHeigh,
+      commonWidth: this.commonEnemieWidth,
     });
 
-    if (Boolean(hitBlaster)) {
-      this.enemieLife = this.enemieLife - hitBlaster.damage;
+    if (Boolean(blasterHit)) {
+      this.addPoints();
+      this.enemieLife = this.enemieLife - blasterHit.damage;
 
-      this.gameGod.gameObjects.deleteItem(hitBlaster.objectId);
+      this.gameGod.gameObjects.deleteItem(blasterHit.objectId);
     }
 
     if (this.enemieLife <= 0) {
+      this.addPoints(10);
+
+      const deadIndex = Math.round(
+        Math.random() * AssetsGame.DEAD_SOUND.length - 1
+      );
+
+      this.gameGod.emmitSound(AssetsGame.DEAD_SOUND[deadIndex]);
+
       this.gameGod.gameObjects.deleteItem(
         `${CommonEnemies.name}-${this.enemyId}`
       );

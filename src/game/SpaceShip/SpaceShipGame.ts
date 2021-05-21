@@ -1,12 +1,13 @@
 import { IGame } from '../../classes/IGame';
 import Game from '../GameGod';
-import imageSpaceShipPath from '../../asset/spaceships/red.png';
 import { KEYBOARD_CODE } from '../../constants';
 import BlasterShoot from './BlasterShoot';
-import SpaceShipLife from './SpaceShipLife';
 import CommonEnemies from '../Enemies/CommonEnemies';
+import AssetsGame from '../../asset';
+import HitableObject from '../../classes/HitableObject';
+import PlayerLife from '../GameInterface/PlayerLife';
 
-class SpaceShip implements IGame {
+class SpaceShip extends HitableObject implements IGame {
   private imageSpaceShip: HTMLImageElement;
   public spaceShipWidth = this.gameGod.GAME_WIDTH * 0.1;
   public spaceShipHeigh = this.gameGod.GAME_HEIGHT * 0.25;
@@ -14,15 +15,20 @@ class SpaceShip implements IGame {
   public positionX = this.gameGod.GAME_WIDTH / 2 - this.spaceShipWidth / 2;
   public positionY = this.gameGod.GAME_HEIGHT * 0.97 - this.spaceShipHeigh;
 
-  private spaceShipLife = new SpaceShipLife(this.gameGod);
-
   private readonly moveFactorX = 0.01;
   private readonly moveFactorY = 0.02;
 
+  private playerLife: PlayerLife;
+
   constructor(protected gameGod: Game) {
+    super();
     this.initializeCommands();
     this.imageSpaceShip = new Image();
-    this.imageSpaceShip.src = imageSpaceShipPath;
+    this.imageSpaceShip.src = AssetsGame.SPACESHIP;
+
+    this.playerLife = this.gameGod.gameObjects.getItem<PlayerLife>(
+      PlayerLife.name
+    );
   }
 
   private async initializeCommands() {
@@ -81,6 +87,8 @@ class SpaceShip implements IGame {
           `${BlasterShoot.name}-${Date.now()}`
         )
       );
+
+      this.gameGod.emmitSound(AssetsGame.SHOOT_SOUND);
     }
   }
 
@@ -93,42 +101,36 @@ class SpaceShip implements IGame {
       this.spaceShipHeigh
     );
 
-    this.spaceShipLife.draw(context);
+    this.playerLife.draw(context);
   }
 
   update(): void {
-    if (this.spaceShipLife.spaceShipLife < 0) {
-      this.spaceShipLife.spaceShipLife = 0;
+    if (this.playerLife.spaceShipLife < 0) {
+      this.playerLife.spaceShipLife = 0;
     }
 
-    if (this.spaceShipLife.spaceShipLife > 100) {
-      this.spaceShipLife.spaceShipLife = 99;
+    if (this.playerLife.spaceShipLife > 100) {
+      this.playerLife.spaceShipLife = 99;
     }
 
-    const shotsBlaster = this.gameGod.gameObjects.getAllOfType<CommonEnemies>(
-      CommonEnemies
-    );
+    const shotsBlaster =
+      this.gameGod.gameObjects.getAllOfType<CommonEnemies>(CommonEnemies);
 
-    const hitEnemie = shotsBlaster.find((enemies) => {
-      const hitX =
-        Math.round(enemies.positionX) >= Math.round(this.positionX) &&
-        Math.round(enemies.positionX) <=
-          Math.round(this.positionX + this.spaceShipWidth);
-
-      const hitY =
-        Math.round(enemies.positionY) >= Math.round(this.positionY) &&
-        Math.round(enemies.positionY) <=
-          Math.round(this.positionY + this.spaceShipHeigh);
-
-      return hitX && hitY;
+    const enemieHit = this.verifyHitObject<CommonEnemies>(shotsBlaster, {
+      positionX: this.positionX,
+      positionY: this.positionY,
+      commonHeigh: this.spaceShipHeigh,
+      commonWidth: this.spaceShipWidth,
     });
 
-    if (hitEnemie) {
-      this.spaceShipLife.spaceShipLife =
-        this.spaceShipLife.spaceShipLife + hitEnemie.enemieDamage;
+    if (Boolean(enemieHit)) {
+      this.gameGod.emmitSound(AssetsGame.DAMAGE_HIT_SOUND);
 
-      hitEnemie.enemieLife = 0;
-      hitEnemie.enemieDamage = 0;
+      this.playerLife.spaceShipLife =
+        this.playerLife.spaceShipLife - enemieHit.enemieDamage;
+
+      enemieHit.enemieLife = 0;
+      enemieHit.enemieDamage = 0;
     }
   }
 }

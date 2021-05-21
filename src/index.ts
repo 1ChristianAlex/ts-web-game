@@ -1,5 +1,6 @@
 import createCanvas from './canvas';
 import GameGod from './game/GameGod';
+import MusicPlayer from './game/MusicPlayer';
 
 const main = async () => {
   const context = createCanvas();

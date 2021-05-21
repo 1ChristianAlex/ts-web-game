@@ -1,6 +1,6 @@
 import { IGame } from '../../classes/IGame';
 import Game from '../GameGod';
-import imageStarPath from '../../asset/stars.png';
+import AssetsGame from '../../asset';
 
 class StarSpace implements IGame {
   public imageStart: HTMLImageElement;
@@ -8,7 +8,7 @@ class StarSpace implements IGame {
 
   constructor(protected gameGod: Game) {
     this.imageStart = new Image();
-    this.imageStart.src = imageStarPath;
+    this.imageStart.src = AssetsGame.STAR;
   }
 
   getRandomY() {

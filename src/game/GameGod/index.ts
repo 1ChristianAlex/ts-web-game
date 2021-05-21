@@ -4,39 +4,64 @@ import SpaceShip from '../SpaceShip/SpaceShipGame';
 import StarSpace from '../StarSpace/StarSpaceGame';
 import GameObjects from './GameObjects';
 import CommonEnemies from '../Enemies/CommonEnemies';
+import MusicPlayer from '../MusicPlayer';
+import AssetsGame from '../../asset';
+import GameInterface from '../GameInterface';
 
 class Game implements IGame {
   public gameObjects = new GameObjects();
 
   public readonly GAME_WIDTH = GAME_WIDTH;
   public readonly GAME_HEIGHT = GAME_HEIGHT;
+  private gameMusic: MusicPlayer;
   public isGamePause = false;
+  private enemiesNumber = 15;
 
   constructor(public context: CanvasRenderingContext2D) {
     this.loadGameObjects();
     this.draw();
     this.pauseGame();
+
+    this.gameMusic = new MusicPlayer(AssetsGame.BACKGROUND_SONG);
+  }
+
+  public loadEnemiesObjects() {
+    for (let enemie = 0; enemie < this.enemiesNumber; enemie++) {
+      const enemieId = Date.now() + enemie;
+      this.gameObjects.addTail(
+        `${CommonEnemies.name}-${enemieId}`,
+        new CommonEnemies(this, enemieId, this.enemiesNumber)
+      );
+    }
   }
 
   private loadGameObjects(): void {
     const startNumber = 50;
-    const enemiesNumber = 10;
+
     for (let starIndex = 0; starIndex < startNumber; starIndex++) {
       this.gameObjects.addHead(`start-${starIndex}`, new StarSpace(this));
     }
 
-    for (let enemie = 0; enemie < enemiesNumber; enemie++) {
-      const enemieId = Date.now() + enemie;
-      this.gameObjects.addTail(
-        `${CommonEnemies.name}-${enemieId}`,
-        new CommonEnemies(this, enemieId)
-      );
-    }
+    this.gameObjects.addHead(GameInterface.name, new GameInterface(this));
 
-    this.gameObjects.addHead(SpaceShip.name, new SpaceShip(this));
+    this.gameObjects.addTail(SpaceShip.name, new SpaceShip(this));
+
+    this.loadEnemiesObjects();
   }
 
-  pauseGame() {
+  private deleteWhenOffScreen(gameItem: IGame, objectName: string) {
+    if (typeof gameItem.positionY === 'number' && gameItem.positionY < 0) {
+      this.gameObjects.deleteItem(objectName);
+    }
+    if (
+      typeof gameItem.positionX === 'number' &&
+      gameItem.positionX > this.GAME_WIDTH
+    ) {
+      this.gameObjects.deleteItem(objectName);
+    }
+  }
+
+  private pauseGame() {
     document.addEventListener('keydown', (event) => {
       if (event.key === KEYBOARD_CODE.ESCAPE) {
         this.isGamePause = !this.isGamePause;
@@ -68,24 +93,27 @@ class Game implements IGame {
         this.deleteWhenOffScreen(gameItem, objectName);
       });
     }
+
+    if (this.gameObjects.getAllOfType(CommonEnemies).length === 0) {
+      this.enemiesNumber = this.enemiesNumber * 0.15 + this.enemiesNumber;
+      this.loadEnemiesObjects();
+    }
   }
 
-  private deleteWhenOffScreen(gameItem: IGame, objectName: string) {
-    if (typeof gameItem.positionY === 'number' && gameItem.positionY < 0) {
-      this.gameObjects.deleteItem(objectName);
-    }
-    if (
-      typeof gameItem.positionX === 'number' &&
-      gameItem.positionX > this.GAME_WIDTH
-    ) {
-      this.gameObjects.deleteItem(objectName);
-    }
+  public emmitSound(soundSource: string) {
+    const sound = new Audio(soundSource);
+    sound.oncanplay = () => {
+      sound.play();
+    };
   }
 
   loop(delta: number) {
     if (!this.isGamePause) {
       this.draw();
       this.update(delta);
+      this.gameMusic.playMusic();
+    } else {
+      this.gameMusic.pauseMusic();
     }
     requestAnimationFrame(this.loop.bind(this));
   }
